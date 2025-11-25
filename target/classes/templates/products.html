@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Products - AWE Electronics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .sort-dropdown {
+            min-width: 200px;
+        }
+        .price-slider {
+            width: 100%;
+        }
+        .active-filter {
+            background-color: #007bff !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-laptop"></i> AWE Electronics
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/products">
+                    <i class="fas fa-store"></i> Products
+                </a>
+                <a class="nav-link" href="/cart">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1>
+                    <i class="fas fa-boxes"></i>
+                    <span th:if="${category}">[[${category}]]</span>
+                    <span th:unless="${category}">All Products</span>
+                    <small class="text-muted" th:if="${searchQuery}">
+                        - Search results for: "<span th:text="${searchQuery}"></span>"
+                    </small>
+                </h1>
+                <p class="text-muted" th:text="'Showing ' + ${products.size} + ' products'"></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Filter Sidebar -->
+            <div class="col-md-3">
+                <div class="filter-section mb-4">
+                    <h5><i class="fas fa-filter"></i> Filters</h5>
+                    
+                    <!-- Category Filter -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Category</strong></label>
+                        <div class="list-group">
+                            <a th:href="@{/products}" 
+                               class="list-group-item list-group-item-action" 
+                               th:classappend="${selectedCategory == null} ? 'active-filter' : ''">
+                                All Categories
+                            </a>
+                            <a th:each="cat : ${categories}"
+                               th:href="@{/products(category=${cat})}"
+                               class="list-group-item list-group-item-action"
+                               th:classappend="${selectedCategory == cat} ? 'active-filter' : ''"
+                               th:text="${cat}">
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Price Range</strong></label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm" 
+                                       th:value="${minPrice != null ? minPrice : minPriceRange}"
+                                       placeholder="Min" step="0.01" id="minPriceInput">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control form-control-sm"
+                                       th:value="${maxPrice != null ? maxPrice : maxPriceRange}"
+                                       placeholder="Max" step="0.01" id="maxPriceInput">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Filter -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   th:checked="${inStockOnly}" id="inStockOnly">
+                            <label class="form-check-label" for="inStockOnly">
+                                In Stock Only
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Apply Filters Button -->
+                    <button class="btn btn-primary btn-sm w-100" onclick="applyFilters()">
+                        <i class="fas fa-check"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="col-md-9">
+                <!-- Search and Sort Bar -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <form th:action="@{/products/search}" method="get">
+                            <div class="input-group">
+                                <input type="text" name="query" class="form-control" 
+                                       placeholder="Search products..." th:value="${searchQuery}">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <!-- Sort Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-sort"></i> 
+                                Sort: 
+                                <span th:text="${sortBy == 'name' ? 'Name' : 
+                                              sortBy == 'price' ? 'Price' : 
+                                              sortBy == 'category' ? 'Category' : 'Name'}"></span>
+                                <span th:text="${sortOrder == 'asc' ? '↑' : '↓'}"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" th:href="@{/products(sortBy='name', sortOrder='asc')}">Name A-Z</a></li>
+                                <li><a class="dropdown-item" th:href="@{/products(sortBy='name', sortOrder='desc')}">Name Z-A</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" th:href="@{/products(sortBy='price', sortOrder='asc')}">Price: Low to High</a></li>
+                                <li><a class="dropdown-item" th:href="@{/products(sortBy='price', sortOrder='desc')}">Price: High to Low</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" th:href="@{/products(sortBy='category', sortOrder='asc')}">Category A-Z</a></li>
+                            </ul>
+                        </div>
+                        
+                        <a href="/cart" class="btn btn-outline-primary ms-2">
+                            <i class="fas fa-shopping-cart"></i> View Cart
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Active Filters -->
+                <div th:if="${selectedCategory != null || minPrice != null || maxPrice != null || inStockOnly}" 
+                     class="mb-3">
+                    <small class="text-muted">Active filters: </small>
+                    <span th:if="${selectedCategory}" class="badge bg-primary me-1">
+                        Category: [[${selectedCategory}]]
+                        <a th:href="@{/products}" class="text-white ms-1">×</a>
+                    </span>
+                    <span th:if="${minPrice != null}" class="badge bg-info me-1">
+                        Min: $[[${#numbers.formatDecimal(minPrice, 1, 2)}]]
+                        <a th:href="@{/products(minPrice=null)}" class="text-white ms-1">×</a>
+                    </span>
+                    <span th:if="${maxPrice != null}" class="badge bg-info me-1">
+                        Max: $[[${#numbers.formatDecimal(maxPrice, 1, 2)}]]
+                        <a th:href="@{/products(maxPrice=null)}" class="text-white ms-1">×</a>
+                    </span>
+                    <span th:if="${inStockOnly}" class="badge bg-success me-1">
+                        In Stock Only
+                        <a th:href="@{/products(inStockOnly=false)}" class="text-white ms-1">×</a>
+                    </span>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="row" th:if="${not products.empty}">
+                    <div th:each="product : ${products}" class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 th:text="${product.name}" class="card-title"></h5>
+                                <p th:text="${product.description}" class="card-text text-muted small"></p>
+                                <p class="card-text">
+                                    <strong class="text-primary" 
+                                            th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">
+                                    </strong>
+                                    <br>
+                                    <small class="text-muted" th:text="${product.category}"></small>
+                                    <br>
+                                    <span th:class="${product.stockQuantity > 0 ? 'text-success' : 'text-danger'}">
+                                        <i class="fas" 
+                                           th:class="${product.stockQuantity > 0 ? 'fa-check-circle' : 'fa-times-circle'}">
+                                        </i>
+                                        <span th:text="${product.stockQuantity > 0 ? 'In Stock (' + product.stockQuantity + ')' : 'Out of Stock'}">
+                                        </span>
+                                    </span>
+                                </p>
+                                
+                                <!-- Add to Cart Form -->
+                                <form th:action="@{/cart/add}" method="post" 
+                                      th:if="${product.stockQuantity > 0}">
+                                    <input type="hidden" name="productId" th:value="${product.productId}">
+                                    <div class="input-group">
+                                        <input type="number" name="quantity" value="1" min="1" 
+                                               th:max="${product.stockQuantity}" class="form-control">
+                                        <button class="btn btn-success" type="submit">
+                                            <i class="fas fa-cart-plus"></i> Add
+                                        </button>
+                                    </div>
+                                </form>
+                                <button th:unless="${product.stockQuantity > 0}" 
+                                        class="btn btn-secondary w-100" disabled>
+                                    Out of Stock
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Products Message -->
+                <div th:if="${products.empty}" class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h3>No products found</h3>
+                    <p class="text-muted" th:if="${searchQuery}">
+                        No products match your search criteria.
+                    </p>
+                    <p class="text-muted" th:unless="${searchQuery}">
+                        Try adjusting your filters or search terms.
+                    </p>
+                    <a th:href="@{/products}" class="btn btn-primary mt-3">
+                        <i class="fas fa-times"></i> Clear All Filters
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="mt-4">
+            <a href="/" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function applyFilters() {
+            const minPrice = document.getElementById('minPriceInput').value;
+            const maxPrice = document.getElementById('maxPriceInput').value;
+            const inStockOnly = document.getElementById('inStockOnly').checked;
+            
+            let url = '/products?';
+            if (minPrice) url += `minPrice=${minPrice}&`;
+            if (maxPrice) url += `maxPrice=${maxPrice}&`;
+            if (inStockOnly) url += `inStockOnly=true&`;
+            
+            // Remove trailing & if exists
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+            
+            window.location.href = url;
+        }
+
+        // Set default price range values
+        document.addEventListener('DOMContentLoaded', function() {
+            const minPriceInput = document.getElementById('minPriceInput');
+            const maxPriceInput = document.getElementById('maxPriceInput');
+            
+            if (minPriceInput && !minPriceInput.value) {
+                minPriceInput.placeholder = '[[${#numbers.formatDecimal(minPriceRange, 1, 2)}]]';
+            }
+            if (maxPriceInput && !maxPriceInput.value) {
+                maxPriceInput.placeholder = '[[${#numbers.formatDecimal(maxPriceRange, 1, 2)}]]';
+            }
+        });
+    </script>
+</body>
+</html>
