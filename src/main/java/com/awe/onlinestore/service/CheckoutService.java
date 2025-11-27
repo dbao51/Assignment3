@@ -27,40 +27,40 @@ public class CheckoutService {
         System.out.println("🔧 Starting checkout process...");
         
         if (cart == null || cart.isEmpty()) {
-            System.out.println("❌ Cart is empty. Cannot proceed with checkout.");
+            System.out.println("Cart is empty. Cannot proceed with checkout.");
             return null;
         }
 
         if (customer == null) {
-            System.out.println("❌ Customer is null.");
+            System.out.println("Customer is null.");
             return null;
         }
 
         if (shippingAddress == null || !shippingAddress.isValid()) {
-            System.out.println("❌ Invalid shipping address.");
+            System.out.println("Invalid shipping address.");
             return null;
         }
 
-        System.out.println("✅ All validations passed.");
-        System.out.println("📦 Cart items: " + cart.getItems().size());
-        System.out.println("👤 Customer: " + customer.getName());
+        System.out.println("All validations passed.");
+        System.out.println("Cart items: " + cart.getItems().size());
+        System.out.println("Customer: " + customer.getName());
 
         // Validate cart items
         if (!validateCartItems(cart)) {
-            System.out.println("❌ Checkout failed due to cart validation issues.");
+            System.out.println("Checkout failed due to cart validation issues.");
             return null;
         }
 
         // Create order
         Order order = createOrder(cart, customer, shippingAddress);
         if (order == null) {
-            System.out.println("❌ Failed to create order.");
+            System.out.println("Failed to create order.");
             return null;
         }
 
-        System.out.println("✅ Order created successfully!");
-        System.out.printf("🎉 Order ID: %s%n", order.getOrderId());
-        System.out.printf("💰 Total Amount: $%.2f%n", order.getTotalAmount());
+        System.out.println("Order created successfully!");
+        System.out.printf("Order ID: %s%n", order.getOrderId());
+        System.out.printf("Total Amount: $%.2f%n", order.getTotalAmount());
 
         return order;
     }
@@ -79,11 +79,11 @@ public class CheckoutService {
             int requestedQuantity = item.getQuantity();
 
             if (!catalogueService.checkStockAvailability(product.getProductId(), requestedQuantity)) {
-                System.out.printf("❌ Insufficient stock for: %s (Requested: %d, Available: %d)%n",
+                System.out.printf("Insufficient stock for: %s (Requested: %d, Available: %d)%n",
                     product.getName(), requestedQuantity, product.getStockQuantity());
                 allValid = false;
             } else {
-                System.out.printf("✅ Stock OK for: %s (Requested: %d, Available: %d)%n",
+                System.out.printf("Stock OK for: %s (Requested: %d, Available: %d)%n",
                     product.getName(), requestedQuantity, product.getStockQuantity());
             }
         }
