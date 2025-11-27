@@ -57,7 +57,7 @@ public class PaymentService {
         order.markAsPaid();
         database.saveOrder(order);
 
-        System.out.println("✅ Payment processed successfully!");
+        System.out.println("Payment processed successfully!");
         System.out.printf("Payment ID: %s%n", paymentMethod.getPaymentId());
         return true;
     }
